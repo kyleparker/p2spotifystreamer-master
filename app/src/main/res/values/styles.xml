@@ -12,7 +12,17 @@
         <item name="windowNoTitle">true</item>
         <item name="windowActionModeOverlay">true</item>
         <item name="colorButtonNormal">@color/theme_accent</item>
+        <item name="searchViewStyle">@style/AppTheme.SearchView</item>
+        <item name="android:editTextColor">@color/text_light_secondary</item>
+        <item name="android:textColorHint">@color/text_light_secondary</item>
     </style>
+
+    <!-- Intermediary theme for SessionDetails (so we can override it on large screens) -->
+    <style name="AppTheme.FloatingWindow.Base" parent="AppTheme">
+        <item name="isFloatingWindow">false</item>
+    </style>
+
+    <style name="AppTheme.FloatingWindow" parent="AppTheme.FloatingWindow.Base" />
 
     <style name="ActionBarThemeOverlay" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:textColorPrimary">@color/text_light</item>
@@ -32,6 +42,11 @@
     <style name="ActionBar.SubTitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
         <item name="android:textColor">@color/text_light</item>
         <item name="android:textSize">@dimen/text_size_subtitle</item>
+    </style>
+
+    <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">
+        <item name="closeIcon">@drawable/ic_action_close</item>
+        <item name="searchIcon">@drawable/ic_action_search</item>
     </style>
 
     <style name="Button" parent="Widget.AppCompat.Button">
@@ -60,6 +75,10 @@
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">@dimen/text_size_medium</item>
         <item name="android:lineSpacingMultiplier">1.1</item>
+    </style>
+
+    <style name="CardText.Title.Large">
+        <item name="android:textSize">@dimen/text_size_title</item>
     </style>
 
     <style name="CardText.Title.Light">

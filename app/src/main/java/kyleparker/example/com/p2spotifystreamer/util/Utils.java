@@ -21,6 +21,5 @@ public class Utils {
         NetworkInfo networkInfo = mgr.getActiveNetworkInfo();
 
         return networkInfo != null && networkInfo.isConnected() && networkInfo.getState() == NetworkInfo.State.CONNECTED;
-
     }
 }

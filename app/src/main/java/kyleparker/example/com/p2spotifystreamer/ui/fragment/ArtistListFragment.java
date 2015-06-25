@@ -2,6 +2,7 @@ package kyleparker.example.com.p2spotifystreamer.ui.fragment;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
@@ -23,6 +24,7 @@ import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
 import kyleparker.example.com.p2spotifystreamer.R;
 import kyleparker.example.com.p2spotifystreamer.object.MyArtist;
+import kyleparker.example.com.p2spotifystreamer.ui.BaseActivity;
 import kyleparker.example.com.p2spotifystreamer.util.Adapters;
 import kyleparker.example.com.p2spotifystreamer.util.Constants;
 import kyleparker.example.com.p2spotifystreamer.util.Utils;
@@ -51,7 +53,6 @@ import retrofit.client.Response;
 public class ArtistListFragment extends Fragment  {
     private Activity mActivity;
     private View mRootView;
-    private View mHeader;
     private SearchView mSearchView;
     private RecyclerView mRecyclerView;
     private ProgressDialog mProgressDialog;
@@ -61,6 +62,8 @@ public class ArtistListFragment extends Fragment  {
     private GridLayoutManager mGridLayoutManager;
 
     private String mQuery;
+    private boolean mIsTablet;
+    private int mSelectedPosition;
 
     // The fragment's current callback object, which is notified of list item clicks.
     private Callbacks mCallbacks = sDummyCallbacks;
@@ -82,13 +85,18 @@ public class ArtistListFragment extends Fragment  {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        reloadFromArguments(getArguments());
         setupView();
 
         if (savedInstanceState != null) {
             mArtistList = savedInstanceState.getParcelableArrayList(Constants.KEY_ARTIST_ARRAY);
-            if (!mArtistList.isEmpty()) {
-                mAdapter.showHeader(mHeader, true);
+            if (mArtistList != null && !mArtistList.isEmpty()) {
+                mRootView.findViewById(R.id.result_header).setVisibility(View.VISIBLE);
                 mAdapter.addAll(mArtistList);
+            }
+            mSelectedPosition = savedInstanceState.getInt(Constants.EXTRA_SELECTED_ARTIST_POSITION);
+            if (mAdapter.getItemCount() >= mSelectedPosition) {
+                mAdapter.setSelectedItem(mSelectedPosition);
             }
         }
     }
@@ -99,6 +107,7 @@ public class ArtistListFragment extends Fragment  {
 
         if (mArtistList != null) {
             outState.putParcelableArrayList(Constants.KEY_ARTIST_ARRAY, mArtistList);
+            outState.putInt(Constants.EXTRA_SELECTED_ARTIST_POSITION, mSelectedPosition);
         }
     }
 
@@ -123,6 +132,18 @@ public class ArtistListFragment extends Fragment  {
     }
 
     /**
+     * Convert the fragment arguments to intents for use during the activity lifecycle
+     */
+    private void reloadFromArguments(Bundle arguments) {
+        final Intent intent = BaseActivity.fragmentArgumentsToIntent(arguments);
+
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            mIsTablet = extras.getBoolean(Constants.EXTRA_IS_TABLET);
+        }
+    }
+
+    /**
      * Handle the search function
      * <p/>
      * Setup the necessary views for the activity
@@ -140,21 +161,18 @@ public class ArtistListFragment extends Fragment  {
         mGridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
-                return mAdapter.isHeader(position) ? mGridLayoutManager.getSpanCount() : 1;
+                return 1;
             }
         });
         mRecyclerView.setLayoutManager(mGridLayoutManager);
 
-        // Add result header to the RecyclerView
-        LayoutInflater inflater = mActivity.getLayoutInflater();
-        mHeader = inflater.inflate(R.layout.header_search_result, mRecyclerView, false);
-
         // Setup adapter and artist list
         mArtistList = new ArrayList<>();
-        mAdapter = new Adapters.ArtistAdapter(mActivity, mHeader, mArtistList);
-        mAdapter.showHeader(mHeader, false);
+        mAdapter = new Adapters.ArtistAdapter(mActivity, mArtistList);
         mAdapter.setOnItemClickListener(mOnItemClickListener);
         mRecyclerView.setAdapter(mAdapter);
+
+        mRootView.findViewById(R.id.result_header).setVisibility(View.GONE);
 
         // Setup the input text to respond to the search action from the keyboard
         mSearchView = (SearchView) mRootView.findViewById(R.id.edit_search);
@@ -211,9 +229,19 @@ public class ArtistListFragment extends Fragment  {
         @Override
         public void onItemClick(View view, int position) {
             // Subtract one from the position to account for the header
-            MyArtist artist = mAdapter.getItem(position - 1);
+            MyArtist artist = mAdapter.getItem(position);
 
             if (artist != null) {
+                // Set the selected position to persist on device rotation
+                mSelectedPosition = position;
+
+                // If the device is a tablet, redraw the items to set the selected item
+                if (mIsTablet) {
+                    // Redraw the new selection
+                    mAdapter.setSelectedItem(position);
+                    mAdapter.notifyItemChanged(position);
+                }
+
                 // Notify the active callbacks interface (the activity, if the fragment is attached to one) that
                 // an item has been selected.
                 mCallbacks.onItemSelected(artist.id, artist.name, artist.getImageUrl());
@@ -274,7 +302,13 @@ public class ArtistListFragment extends Fragment  {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mAdapter.showHeader(mHeader, true);
+                        // If a tablet, set the first item in the list and automatically load the top tracks for the artist
+                        if (mIsTablet && mAdapter.getItemCount() > 0) {
+                            mAdapter.setSelectedItem(0);
+                            mCallbacks.onItemSelected(mArtistList.get(0).id, mArtistList.get(0).name,
+                                    mArtistList.get(0).getImageUrl());
+                        }
+                        mRootView.findViewById(R.id.result_header).setVisibility(View.VISIBLE);
                         mAdapter.addAll(mArtistList);
                         mProgressDialog.dismiss();
                     }

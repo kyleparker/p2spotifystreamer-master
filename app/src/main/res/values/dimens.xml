@@ -6,13 +6,15 @@
     <dimen name="activity_margin_half">8dp</dimen>
 
     <dimen name="artist_card_height">224dp</dimen>
-    <dimen name="artist_card_image_height">128dp</dimen>
-    <dimen name="artist_card_detail_height">96dp</dimen>
+    <dimen name="artist_track_card_height">176dp</dimen>
 
     <dimen name="cardview_corner_radius">0dp</dimen>
     <dimen name="cardview_elevation">4dp</dimen>
 
     <dimen name="flexible_space_image_height">280dp</dimen>
+
+    <dimen name="header_elevation">2dp</dimen>
+    <dimen name="header_padding">16dp</dimen>
 
     <dimen name="toolbar_elevation">4dp</dimen>
     <dimen name="text_size_medium">16sp</dimen>

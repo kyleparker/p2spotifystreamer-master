@@ -10,6 +10,8 @@ public class Constants {
 
     public static final String EXTRA_ARTIST_ID = "artist_id";
     public static final String EXTRA_IMAGE_URL = "image_url";
+    public static final String EXTRA_SELECTED_ARTIST_POSITION = "selected_artist_position";
+    public static final String EXTRA_IS_TABLET = "is_tablet";
     public static final String EXTRA_TITLE = "title";
 
     public final static String KEY_ARTIST_ARRAY = "key_artist_array";

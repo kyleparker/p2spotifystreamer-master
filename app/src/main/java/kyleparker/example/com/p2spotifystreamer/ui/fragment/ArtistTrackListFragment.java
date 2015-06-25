@@ -10,7 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.graphics.Palette;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -94,9 +94,13 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
     private boolean mGapIsChanging;
     private boolean mGapHidden;
     private boolean mReady;
+    private boolean mIsTablet;
     private String mArtistId;
     private String mArtistName;
     private String mImageUrl;
+
+    // The fragment's current callback object, which is notified of list item clicks.
+    private Callbacks mCallbacks = sDummyCallbacks;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -120,7 +124,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
 
         if (savedInstanceState != null) {
             mTrackList = savedInstanceState.getParcelableArrayList(Constants.KEY_TRACK_ARRAY);
-            if (!mTrackList.isEmpty()) {
+            if (mTrackList != null && !mTrackList.isEmpty()) {
                 mAdapter.addAll(mTrackList);
             }
         } else {
@@ -135,6 +139,25 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
         if (!mTrackList.isEmpty()) {
             outState.putParcelableArrayList(Constants.KEY_TRACK_ARRAY, mTrackList);
         }
+    }
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        // Activities containing this fragment must implement its callbacks.
+        if (!(activity instanceof Callbacks)) {
+            throw new IllegalStateException("Activity must implement fragment's callbacks.");
+        }
+
+        mCallbacks = (Callbacks) activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+
+        // Reset the active callbacks interface to the dummy implementation.
+        mCallbacks = sDummyCallbacks;
     }
 
     @Override
@@ -220,10 +243,19 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
      * @return
      */
     private ObservableRecyclerView createScrollable() {
+        int artistsPerRow = mActivity.getResources().getInteger(R.integer.artist_tracks_per_row);
+
         ObservableRecyclerView recyclerView = (ObservableRecyclerView) mRootView.findViewById(R.id.artist_track_list);
         recyclerView.setScrollViewCallbacks(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(mActivity));
-        recyclerView.setHasFixedSize(false);
+        // Define the gridlayout for the RecyclerView - column count will change based on rotation and device type
+        final GridLayoutManager gridLayoutManager = new GridLayoutManager(mActivity, artistsPerRow);
+        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return mAdapter.isHeader(position) ? gridLayoutManager.getSpanCount() : 1;
+            }
+        });
+        recyclerView.setLayoutManager(gridLayoutManager);
 
         View headerView = new View(mActivity);
         headerView.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT, mFlexibleSpaceImageHeight));
@@ -289,6 +321,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
             mArtistId = extras.getString(Constants.EXTRA_ARTIST_ID);
             mArtistName = extras.getString(Constants.EXTRA_TITLE);
             mImageUrl = extras.getString(Constants.EXTRA_IMAGE_URL);
+            mIsTablet = extras.getBoolean(Constants.EXTRA_IS_TABLET);
         }
     }
 
@@ -296,18 +329,16 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
      * Setup the various views for the fragment - including those needed for the parallax effect
      */
     private void setupView() {
-        // Even when the top gap has began to change, header bar still can move within mIntersectionHeight.
-        mFlexibleSpaceImageHeight = mActivity.getResources().getDimensionPixelSize(R.dimen.flexible_space_image_height);
         mActionBarSize = getActionBarSize();
+        // Even when the top gap has began to change, header bar still can move within mIntersectionHeight.
+        mFlexibleSpaceImageHeight = mIsTablet ? mActionBarSize :
+                mActivity.getResources().getDimensionPixelSize(R.dimen.flexible_space_image_height);
 
         mImage = (ImageView) mRootView.findViewById(R.id.image);
         mHeader = mRootView.findViewById(R.id.header);
         mHeaderBar = mRootView.findViewById(R.id.header_bar);
         mHeaderBackground = mRootView.findViewById(R.id.header_background);
         mListBackgroundView = mRootView.findViewById(R.id.list_background);
-
-        TextView subtitleView = (TextView) mRootView.findViewById(R.id.subtitle);
-        subtitleView.setText(mArtistName);
 
         final ObservableRecyclerView scrollable = createScrollable();
         ScrollUtils.addOnGlobalLayoutListener(scrollable, new Runnable() {
@@ -318,44 +349,57 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
             }
         });
 
-        Target target = new Target() {
-            @Override
-            public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
-                Palette.generateAsync(bitmap, new Palette.PaletteAsyncListener() {
-                    public void onGenerated(Palette palette) {
-                        mImage.setImageBitmap(bitmap);
-                        Palette.Swatch darkSwatch = palette.getDarkVibrantSwatch() == null ?
-                                palette.getDarkMutedSwatch() : palette.getDarkVibrantSwatch();
+        if (mIsTablet) {
+            // If the user is on a tablet, hide the artist image
+            mImage.setVisibility(View.GONE);
+            mHeaderBar.setBackgroundColor(mActivity.getResources().getColor(R.color.theme_accent_2));
+            mHeaderBackground.setBackgroundColor(mActivity.getResources().getColor(R.color.theme_accent_2));
+        } else {
+            TextView subtitleView = (TextView) mRootView.findViewById(R.id.subtitle);
+            subtitleView.setText(mArtistName);
 
-                        if (darkSwatch != null) {
-                            mHeaderBar.setBackgroundColor(darkSwatch.getRgb());
-                            mHeaderBackground.setBackgroundColor(darkSwatch.getRgb());
+            // Else if the user is on a phone, style the status bar, toolbar and background parallax image
+            Target target = new Target() {
+                @Override
+                public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
+                    Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                        public void onGenerated(Palette palette) {
+                            mImage.setImageBitmap(bitmap);
+                            Palette.Swatch darkSwatch = palette.getDarkVibrantSwatch() == null ?
+                                    palette.getDarkMutedSwatch() : palette.getDarkVibrantSwatch();
 
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                Window window = mActivity.getWindow();
-                                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                                window.setStatusBarColor(darkSwatch.getRgb());
+                            if (darkSwatch != null) {
+                                mHeaderBar.setBackgroundColor(darkSwatch.getRgb());
+                                mHeaderBackground.setBackgroundColor(darkSwatch.getRgb());
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                    Window window = mActivity.getWindow();
+                                    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                                    window.setStatusBarColor(darkSwatch.getRgb());
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
+
+                @Override
+                public void onBitmapFailed(Drawable errorDrawable) {
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable placeHolderDrawable) {
+                }
+            };
+
+            if (!TextUtils.isEmpty(mImageUrl)) {
+                Picasso.with(mActivity)
+                        .load(mImageUrl)
+                        .resize(300, 300)
+                        .centerCrop()
+                        .into(target);
+            } else {
+                mImage.setImageResource(R.drawable.ic_placeholder_artist);
             }
-
-            @Override
-            public void onBitmapFailed(Drawable errorDrawable) { }
-
-            @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) { }
-        };
-
-        if (!TextUtils.isEmpty(mImageUrl)) {
-            Picasso.with(mActivity)
-                    .load(mImageUrl)
-                    .resize(300, 300)
-                    .centerCrop()
-                    .into(target);
-        } else {
-            mImage.setImageResource(R.drawable.ic_placeholder_artist);
         }
     }
 
@@ -453,5 +497,23 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
                 }
             });
         }
+    };
+
+    /**
+     * A callback interface that all activities containing this fragment must implement. This mechanism allows activities
+     * to be notified of item selections.
+     */
+    public interface Callbacks {
+        // Callback for when an item has been selected.
+        void onItemSelected(String id, String artistName, String imageUrl);
+    }
+
+    /**
+     * A dummy implementation of the {@link Callbacks} interface that does nothing. Used only when this fragment is not
+     * attached to an activity.
+     */
+    private static Callbacks sDummyCallbacks = new Callbacks() {
+        @Override
+        public void onItemSelected(String id, String artistName, String imageUrl) { }
     };
 }

@@ -6,8 +6,11 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import kyleparker.example.com.p2spotifystreamer.R;
+import kyleparker.example.com.p2spotifystreamer.ui.fragment.ArtistListFragment;
 import kyleparker.example.com.p2spotifystreamer.ui.fragment.ArtistTrackListFragment;
 import kyleparker.example.com.p2spotifystreamer.util.Constants;
+
+// TODO: When a track is selected, app uses an Intent to launch the Now playing screen and starts playback of the track.
 
 /**
  * Activity for phones to display the top 10 tracks for an artist. Include {@link ArtistTrackListFragment} to display
@@ -15,7 +18,7 @@ import kyleparker.example.com.p2spotifystreamer.util.Constants;
  *
  * Created by kyleparker on 6/16/2015.
  */
-public class ArtistTrackActivity extends BaseActivity {
+public class ArtistTrackActivity extends BaseActivity implements ArtistTrackListFragment.Callbacks {
 
     private String mArtistId;
     private String mImageUrl;
@@ -41,6 +44,7 @@ public class ArtistTrackActivity extends BaseActivity {
             arguments.putString(Constants.EXTRA_ARTIST_ID, mArtistId);
             arguments.putString(Constants.EXTRA_IMAGE_URL, mImageUrl);
             arguments.putString(Constants.EXTRA_TITLE, mTitle);
+            arguments.putBoolean(Constants.EXTRA_IS_TABLET, mIsTablet);
             ArtistTrackListFragment fragment = new ArtistTrackListFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
@@ -82,5 +86,10 @@ public class ArtistTrackActivity extends BaseActivity {
                 toolbar.setTitle("");
             }
         });
+    }
+
+    @Override
+    public void onItemSelected(String id, String artistName, String imageUrl) {
+
     }
 }

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_window"
     tools:context=".MainActivity">
 
     <include layout="@layout/toolbar_actionbar"/>
@@ -10,23 +11,29 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginLeft="@dimen/activity_horizontal_margin"
-        android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:layout_marginTop="?actionBarSize"
-        android:orientation="horizontal"
-        android:paddingTop="@dimen/activity_vertical_margin">
+        android:orientation="horizontal">
 
-        <fragment
-            android:id="@+id/fragment_artist_list"
-            android:name="kyleparker.example.com.p2spotifystreamer.ui.fragment.ArtistListFragment"
+        <FrameLayout
+            android:id="@+id/item_search_container"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="@dimen/artist_list_weight" />
+            android:layout_weight="@dimen/artist_list_weight"/>
 
         <FrameLayout
             android:id="@+id/item_detail_container"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="@dimen/artist_track_detail_weight" />
+            android:layout_weight="@dimen/artist_track_detail_weight">
+
+            <ImageView
+                android:id="@+id/empty_loading_background"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_margin="64dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_spotify"/>
+        </FrameLayout>
     </LinearLayout>
 </FrameLayout>

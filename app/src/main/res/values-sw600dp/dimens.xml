@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <dimen name="floating_window_width">320dp</dimen>
+    <dimen name="floating_window_height">384dp</dimen>
+
     <item name="artist_list_weight" type="dimen" format="integer">1</item>
-    <item name="artist_track_detail_weight" type="dimen" format="integer">3</item>
+    <item name="artist_track_detail_weight" type="dimen" format="integer">2</item>
 </resources>

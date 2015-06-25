@@ -9,19 +9,26 @@ import android.widget.Toast;
 
 import kyleparker.example.com.p2spotifystreamer.R;
 import kyleparker.example.com.p2spotifystreamer.ui.fragment.ArtistListFragment;
+import kyleparker.example.com.p2spotifystreamer.ui.fragment.ArtistTrackListFragment;
 import kyleparker.example.com.p2spotifystreamer.util.Constants;
 
+// TODO: Tablet UI uses a Master-Detail layout implemented using fragments. The left fragment is for
+// searching artists and the right fragment is for displaying top tracks of a selected artist. The
+// Now Playing controls are displayed in a DialogFragment.
+// TODO: When a track is selected, app uses an Intent to launch the Now playing screen and starts playback of the track.
 // DONE: Convert to fragments and provide a tablet layout
 // TODO: Add activity transition animations
-// TODO: Test on a tablet - structure should be in place, just need to test and tweak
-
+// DONE: Test on a tablet - structure should be in place, just need to test and tweak
+// TODO: App displays a “Now Playing” Button in the ActionBar that serves to reopen the player UI should the user navigate back
+// to browse content and then want to resume control over playback.
 /**
  * Main activity for Project 1: Spotify Streamer app. This activity provides both phone and tablet layouts.
  *
  * Created by kyleparker on 6/15/2015.
  */
 public class MainActivity extends BaseActivity implements
-        ArtistListFragment.Callbacks {
+        ArtistListFragment.Callbacks,
+        ArtistTrackListFragment.Callbacks {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +36,23 @@ public class MainActivity extends BaseActivity implements
         setContentView(R.layout.activity_main);
 
         setupToolbar();
+
+        // savedInstanceState is non-null when there is fragment state saved from previous configurations of
+        // this activity (e.g. when rotating the screen from portrait to landscape). In this case, the fragment
+        // will automatically be re-added to its container so we don't need to manually add it.
+        // For more information, see the Fragments API guide at:
+        //
+        // http://developer.android.com/guide/components/fragments.html
+        if (savedInstanceState == null) {
+            // Create the detail fragment and add it to the activity using a fragment transaction.
+            Bundle arguments = new Bundle();
+            arguments.putBoolean(Constants.EXTRA_IS_TABLET, mIsTablet);
+            ArtistListFragment fragment = new ArtistListFragment();
+            fragment.setArguments(arguments);
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.item_search_container, fragment)
+                    .commit();
+        }
     }
 
     @Override
@@ -73,11 +97,28 @@ public class MainActivity extends BaseActivity implements
      */
     @Override
     public void onItemSelected(String id, String artistName, String imageUrl) {
-        // In single-pane mode, simply start the detail activity for the selected item ID.
-        Intent detailIntent = new Intent(this, ArtistTrackActivity.class);
-        detailIntent.putExtra(Constants.EXTRA_ARTIST_ID, id);
-        detailIntent.putExtra(Constants.EXTRA_IMAGE_URL, imageUrl);
-        detailIntent.putExtra(Constants.EXTRA_TITLE, artistName);
-        startActivity(detailIntent);
+        if (mIsTablet) {
+            // In two-pane mode, show the detail view in this activity by adding or replacing the detail
+            // fragment using a fragment transaction.
+            Bundle arguments = new Bundle();
+            arguments.putString(Constants.EXTRA_ARTIST_ID, id);
+            arguments.putString(Constants.EXTRA_IMAGE_URL, imageUrl);
+            arguments.putString(Constants.EXTRA_TITLE, artistName);
+            arguments.putBoolean(Constants.EXTRA_IS_TABLET, mIsTablet);
+            ArtistTrackListFragment fragment = new ArtistTrackListFragment();
+            fragment.setArguments(arguments);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.item_detail_container, fragment)
+                    .commit();
+
+        } else {
+            // In single-pane mode, simply start the detail activity for the selected item ID.
+            Intent detailIntent = new Intent(this, ArtistTrackActivity.class);
+            detailIntent.putExtra(Constants.EXTRA_ARTIST_ID, id);
+            detailIntent.putExtra(Constants.EXTRA_IMAGE_URL, imageUrl);
+            detailIntent.putExtra(Constants.EXTRA_TITLE, artistName);
+            detailIntent.putExtra(Constants.EXTRA_IS_TABLET, mIsTablet);
+            startActivity(detailIntent);
+        }
     }
 }

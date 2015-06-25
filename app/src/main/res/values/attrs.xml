@@ -3,5 +3,12 @@
     <declare-styleable name="BaseTheme">
         <attr name="actionBarIconColor" format="color" />
         <attr name="actionBarInsetStart" format="dimension" />
+        <attr name="isFloatingWindow" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="BezelImageView">
+        <attr name="maskDrawable" format="reference" />
+        <attr name="borderDrawable" format="reference" />
+        <attr name="desaturateOnPress" format="boolean" />
     </declare-styleable>
 </resources>

@@ -1,6 +1,7 @@
 package kyleparker.example.com.p2spotifystreamer.util;
 
 import android.content.Context;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -32,41 +33,31 @@ public class Adapters {
     public static class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ViewHolder> {
         private Context context;
         private List<MyArtist> items;
-        private View header;
         private OnItemClickListener itemClickListener;
+        // Start with first item selected
+        private int mSelectedItem = -1;
 
-        private static final int ITEM_VIEW_TYPE_HEADER = 0;
-        private static final int ITEM_VIEW_TYPE_ITEM = 1;
-
-        public ArtistAdapter(Context context, View header, List<MyArtist> items) {
+        public ArtistAdapter(Context context, List<MyArtist> items) {
             this.context = context;
-            this.header = header;
             this.items = items;
         }
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
-            if (viewType == ITEM_VIEW_TYPE_HEADER) {
-                return new ViewHolder(header);
-            }
-
             View v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_artist, viewGroup, false);
 
             return new ViewHolder(v);
         }
 
-        public void showHeader(View view, boolean visible) {
-            view.setVisibility(visible ? View.VISIBLE : View.GONE);
-        }
-
         @Override
         public void onBindViewHolder(ViewHolder viewHolder, int position) {
-            if (isHeader(position)) {
-                return;
+            if (mSelectedItem > -1) {
+                // Set selected state; use a state list drawable to style the view
+                viewHolder.getCardView().setSelected(mSelectedItem == position);
             }
 
             // Subtract 1 for the header
-            MyArtist item = items.get(position - 1);
+            MyArtist item = items.get(position);
 
             if (item != null) {
                 viewHolder.getArtistName().setText(item.name);
@@ -85,21 +76,15 @@ public class Adapters {
 
         @Override
         public int getItemCount() {
-            // Add 1 to retrieve the total number of items, including the header
-            return items.size() + 1;
+            return items.size();
         }
 
         public MyArtist getItem(int position) {
             return items.get(position);
         }
 
-        @Override
-        public int getItemViewType(int position) {
-            return isHeader(position) ? ITEM_VIEW_TYPE_HEADER : ITEM_VIEW_TYPE_ITEM;
-        }
-
-        public boolean isHeader(int position) {
-            return position == 0;
+        public void setSelectedItem(int position) {
+            mSelectedItem = position;
         }
 
         public void addAll(List<MyArtist> artists) {
@@ -120,15 +105,21 @@ public class Adapters {
             private TextView artistName;
             private ImageView artistThumb;
             private ProgressBar progress;
+            private CardView cardView;
 
             public ViewHolder(View base) {
                 super(base);
 
+                cardView = (CardView) base.findViewById(R.id.cardview);
                 artistName = (TextView) base.findViewById(R.id.artist_name);
                 artistThumb = (ImageView) base.findViewById(R.id.artist_thumb);
                 progress = (ProgressBar) base.findViewById(R.id.progress);
 
                 base.setOnClickListener(this);
+            }
+
+            public CardView getCardView() {
+                return cardView;
             }
 
             public TextView getArtistName() {
@@ -145,6 +136,11 @@ public class Adapters {
 
             @Override
             public void onClick(View v) {
+                // Redraw the old selection and the new
+                notifyItemChanged(mSelectedItem);
+//                mSelectedItem = getLayoutPosition();
+//                notifyItemChanged(mSelectedItem);
+
                 if (itemClickListener != null) {
                     itemClickListener.onItemClick(v, getPosition());
                 }
@@ -167,8 +163,8 @@ public class Adapters {
     }
 
     public static class ArtistTrackAdapter extends RecyclerView.Adapter<ArtistTrackAdapter.ViewHolder> {
-        private static final int VIEW_TYPE_HEADER = 0;
-        private static final int VIEW_TYPE_ITEM = 1;
+        private static final int ITEM_VIEW_TYPE_HEADER = 0;
+        private static final int ITEM_VIEW_TYPE_ITEM = 1;
 
         private Context mContext;
         private List<MyTrack> mItems;
@@ -183,7 +179,7 @@ public class Adapters {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
-            if (viewType == VIEW_TYPE_HEADER) {
+            if (viewType == ITEM_VIEW_TYPE_HEADER) {
                 return new ViewHolder(mHeader);
             }
 
@@ -193,24 +189,16 @@ public class Adapters {
         }
 
         @Override
-        public int getItemViewType(int position) {
-            return (position == 0) ? VIEW_TYPE_HEADER : VIEW_TYPE_ITEM;
-        }
-
-        public boolean isHeader(int position) {
-            return position == 0;
-        }
-
-        @Override
         public void onBindViewHolder(ViewHolder viewHolder, int position) {
             if (isHeader(position)) {
                 return;
             }
 
-            MyTrack item = mItems.get(position);
+            // Subtract 1 for the header
+            MyTrack item = mItems.get(position - 1);
 
             if (item != null) {
-                viewHolder.getAlbumName().setText(item.album.name);
+                viewHolder.getAlbumName().setText(mContext.getString(R.string.content_track_position, position, item.album.name));
                 viewHolder.getTrackName().setText(item.name);
                 if (!TextUtils.isEmpty(item.getImageUrl())) {
                     Picasso.with(mContext)
@@ -226,13 +214,23 @@ public class Adapters {
         }
 
         @Override
-        public int getItemCount () {
-            return mItems.size();
+        public int getItemViewType(int position) {
+            return (position == 0) ? ITEM_VIEW_TYPE_HEADER : ITEM_VIEW_TYPE_ITEM;
         }
 
-//        public MyTrack getItem(int position) {
-//            return mItems.get(position);
-//        }
+        @Override
+        public int getItemCount () {
+            // Add 1 to retrieve the total number of items, including the header
+            return mItems.size() + 1;
+        }
+
+        public MyTrack getItem(int position) {
+            return mItems.get(position + 1);
+        }
+
+        public boolean isHeader(int position) {
+            return position == 0;
+        }
 
         public void addAll(List<MyTrack> tracks) {
             mItems.clear();
