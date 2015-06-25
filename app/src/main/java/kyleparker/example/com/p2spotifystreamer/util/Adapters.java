@@ -138,8 +138,6 @@ public class Adapters {
             public void onClick(View v) {
                 // Redraw the old selection and the new
                 notifyItemChanged(mSelectedItem);
-//                mSelectedItem = getLayoutPosition();
-//                notifyItemChanged(mSelectedItem);
 
                 if (itemClickListener != null) {
                     itemClickListener.onItemClick(v, getPosition());
