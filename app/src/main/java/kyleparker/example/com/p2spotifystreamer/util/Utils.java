@@ -20,7 +20,7 @@ import kyleparker.example.com.p2spotifystreamer.R;
 
 /**
  * Various utilities for the project
- * <p/>
+ *
  * Created by kyleparker on 6/23/2015.
  */
 public class Utils {

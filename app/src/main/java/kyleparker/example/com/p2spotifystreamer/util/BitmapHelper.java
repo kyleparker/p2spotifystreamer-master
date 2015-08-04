@@ -24,6 +24,11 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+ * Helper file for manipulating bitmaps
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
+ */
 public class BitmapHelper {
     private static final String TAG = LogHelper.makeLogTag(BitmapHelper.class);
 

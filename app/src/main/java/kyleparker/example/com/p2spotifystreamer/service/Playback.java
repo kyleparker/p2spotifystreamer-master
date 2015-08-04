@@ -38,6 +38,8 @@ import static android.media.MediaPlayer.OnSeekCompleteListener;
 
 /**
  * A class that implements local media playback using {@link MediaPlayer}
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
  */
 public class Playback implements
         AudioManager.OnAudioFocusChangeListener,

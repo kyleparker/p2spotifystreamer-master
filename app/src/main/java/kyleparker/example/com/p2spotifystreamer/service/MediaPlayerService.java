@@ -32,6 +32,12 @@ import kyleparker.example.com.p2spotifystreamer.util.MediaNotificationManager;
 import kyleparker.example.com.p2spotifystreamer.util.PrefUtils;
 
 // DONE: Lock the notification during playback
+
+/**
+ * Service to handle background playback of audio files
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
+ */
 public class MediaPlayerService extends Service implements Playback.Callback {
     private static final String TAG = LogHelper.makeLogTag(MediaPlayerService.class);
 

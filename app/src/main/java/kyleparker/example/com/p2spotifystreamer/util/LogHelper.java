@@ -19,6 +19,11 @@ import android.util.Log;
 
 import kyleparker.example.com.p2spotifystreamer.BuildConfig;
 
+/**
+ * Log helper
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
+ */
 public class LogHelper {
 
     private static final String LOG_PREFIX = "sample_";

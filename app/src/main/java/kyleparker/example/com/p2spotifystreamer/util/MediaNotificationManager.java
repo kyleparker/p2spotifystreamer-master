@@ -44,6 +44,8 @@ import kyleparker.example.com.p2spotifystreamer.ui.PlayerActivity;
  * Keeps track of a notification and updates it automatically for a given
  * MediaSession. Maintaining a visible notification (usually) guarantees that the music service
  * won't be killed during playback.
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
  */
 public class MediaNotificationManager extends BroadcastReceiver {
     private static final String TAG = LogHelper.makeLogTag(MediaNotificationManager.class);

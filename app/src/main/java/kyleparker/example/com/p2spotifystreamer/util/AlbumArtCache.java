@@ -24,6 +24,8 @@ import java.io.IOException;
 
 /**
  * Implements a basic cache of album arts, with async loading support.
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
  */
 public final class AlbumArtCache {
     private static final String TAG = LogHelper.makeLogTag(AlbumArtCache.class);

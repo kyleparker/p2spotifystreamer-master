@@ -24,6 +24,8 @@ import android.content.res.TypedArray;
 
 /**
  * Generic reusable methods to handle resources.
+ *
+ * Modified source code from: https://github.com/googlesamples/android-MediaBrowserService
  */
 public class ResourceHelper {
     /**
