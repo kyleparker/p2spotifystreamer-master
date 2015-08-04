@@ -23,10 +23,13 @@ import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
 import kyleparker.example.com.p2spotifystreamer.R;
+import kyleparker.example.com.p2spotifystreamer.content.ProviderUtils;
 import kyleparker.example.com.p2spotifystreamer.object.MyArtist;
 import kyleparker.example.com.p2spotifystreamer.ui.BaseActivity;
 import kyleparker.example.com.p2spotifystreamer.util.Adapters;
 import kyleparker.example.com.p2spotifystreamer.util.Constants;
+import kyleparker.example.com.p2spotifystreamer.util.LogHelper;
+import kyleparker.example.com.p2spotifystreamer.util.PrefUtils;
 import kyleparker.example.com.p2spotifystreamer.util.Utils;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -43,7 +46,6 @@ import retrofit.client.Response;
 // DONE: Use SearchView instead of EditText
 // DONE: Check for network connection before query
 // DONE: Display loading spinner for search results
-// TODO: Learn about "headless fragments" and setRetainInstance instead of Parcelable for saving data on rotation
 
 /**
  * Fragment to display the search box and results of the user query
@@ -99,6 +101,11 @@ public class ArtistListFragment extends Fragment  {
                 mAdapter.setSelectedItem(mSelectedPosition);
             }
         }
+
+        // If the artist list is empty, retrieve the previous search (if any) and repopulate the list
+        if (mArtistList.isEmpty()) {
+            loadResults();
+        }
     }
 
     @Override
@@ -130,6 +137,58 @@ public class ArtistListFragment extends Fragment  {
         // Reset the active callbacks interface to the dummy implementation.
         mCallbacks = sDummyCallbacks;
     }
+
+    /**
+     * In a separate thread to avoid any disruption to the UI, load the "now playing" information for the currently selected artist
+     * and track.
+     */
+    private void loadResults() {
+        mProgressDialog = ProgressDialog.show(mActivity, null, mActivity.getString(R.string.content_loading));
+        mProgressDialog.show();
+
+        Runnable load = new Runnable() {
+            public void run() {
+                try {
+                    ProviderUtils provider = ProviderUtils.Factory.get(mActivity);
+
+                    // Retrieve the list of tracks to be used in the spinner - the user can associate the media with a specific path on the trip
+                    mArtistList = provider.getArtists();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    mActivity.runOnUiThread(loadResultsRunnable);
+                }
+            }
+        };
+
+        Thread thread = new Thread(null, load, "loadResults");
+        thread.start();
+    }
+
+    /**
+     * On the main thread, start the intent for the Now Playing activity
+     */
+    private final Runnable loadResultsRunnable = new Runnable() {
+        public void run() {
+            if (mArtistList != null && !mArtistList.isEmpty()) {
+                mRootView.findViewById(R.id.result_header).setVisibility(View.VISIBLE);
+                mAdapter.addAll(mArtistList);
+
+                int position = PrefUtils.getInt(mActivity, R.string.selected_artist_position_key, 0);
+                mSearchView.setQuery(mArtistList.get(position).name, false);
+                mSearchView.clearFocus();
+
+                mAdapter.setSelectedItem(position);
+
+                if (mIsTablet) {
+                    mCallbacks.onArtistSelected(mArtistList.get(position).id, mArtistList.get(position).name,
+                            mArtistList.get(position).getImageUrl());
+                }
+            }
+
+            mProgressDialog.dismiss();
+        }
+    };
 
     /**
      * Convert the fragment arguments to intents for use during the activity lifecycle
@@ -232,6 +291,10 @@ public class ArtistListFragment extends Fragment  {
             MyArtist artist = mAdapter.getItem(position);
 
             if (artist != null) {
+                LogHelper.e("***> fragment", "Set selected artist:", artist.id);
+                PrefUtils.setString(mActivity, R.string.selected_artist_id_key, artist.id);
+                PrefUtils.setInt(mActivity, R.string.selected_artist_position_key, position);
+
                 // Set the selected position to persist on device rotation
                 mSelectedPosition = position;
 
@@ -244,7 +307,7 @@ public class ArtistListFragment extends Fragment  {
 
                 // Notify the active callbacks interface (the activity, if the fragment is attached to one) that
                 // an item has been selected.
-                mCallbacks.onItemSelected(artist.id, artist.name, artist.getImageUrl());
+                mCallbacks.onArtistSelected(artist.id, artist.name, artist.getImageUrl());
             }
         }
     };
@@ -277,10 +340,14 @@ public class ArtistListFragment extends Fragment  {
                     return;
                 }
 
-                // TODO: Determine how to retrieve the next set of results - iterate through the limit/total
-//                Map<String, Object> options = new HashMap<>();
-//                options.put(SpotifyService.OFFSET, 0);
-//                options.put(SpotifyService.LIMIT, 10);
+                ProviderUtils provider = ProviderUtils.Factory.get(mActivity);
+
+                // Reset the search results and delete any existing artists from the database
+                provider.deleteArtists();
+                provider.deleteTracks();
+
+                PrefUtils.setString(mActivity, R.string.selected_artist_id_key, "");
+                PrefUtils.setInt(mActivity, R.string.selected_artist_position_key, 0);
 
                 mArtistList = new ArrayList<>();
                 List<Artist> artistList = artistsPager.artists.items;
@@ -295,6 +362,9 @@ public class ArtistListFragment extends Fragment  {
                     }
 
                     mArtistList.add(myArtist);
+
+                    // Insert the search result in the database
+                    provider.insertArtist(myArtist);
                 }
 
                 // In order to update the adapter and the RecyclerView, the addAll method must be run on the main UI thread
@@ -302,15 +372,19 @@ public class ArtistListFragment extends Fragment  {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // If a tablet, set the first item in the list and automatically load the top tracks for the artist
-                        if (mIsTablet && mAdapter.getItemCount() > 0) {
-                            mAdapter.setSelectedItem(0);
-                            mCallbacks.onItemSelected(mArtistList.get(0).id, mArtistList.get(0).name,
-                                    mArtistList.get(0).getImageUrl());
-                        }
                         mRootView.findViewById(R.id.result_header).setVisibility(View.VISIBLE);
                         mAdapter.addAll(mArtistList);
                         mProgressDialog.dismiss();
+
+                        // If a tablet, set the first item in the list and automatically load the top tracks for the artist
+                        if (mIsTablet && mAdapter.getItemCount() > 0) {
+                            PrefUtils.setString(mActivity, R.string.selected_artist_id_key, mArtistList.get(0).id);
+                            PrefUtils.setInt(mActivity, R.string.selected_artist_position_key, 0);
+
+                            mAdapter.setSelectedItem(0);
+                            mCallbacks.onArtistSelected(mArtistList.get(0).id, mArtistList.get(0).name,
+                                    mArtistList.get(0).getImageUrl());
+                        }
                     }
                 });
             } else {
@@ -345,7 +419,7 @@ public class ArtistListFragment extends Fragment  {
      */
     public interface Callbacks {
         // Callback for when an item has been selected.
-        void onItemSelected(String id, String artistName, String imageUrl);
+        void onArtistSelected(String id, String artistName, String imageUrl);
     }
 
     /**
@@ -354,6 +428,6 @@ public class ArtistListFragment extends Fragment  {
      */
     private static Callbacks sDummyCallbacks = new Callbacks() {
         @Override
-        public void onItemSelected(String id, String artistName, String imageUrl) { }
+        public void onArtistSelected(String id, String artistName, String imageUrl) { }
     };
 }

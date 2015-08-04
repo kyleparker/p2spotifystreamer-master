@@ -56,7 +56,6 @@ public class Adapters {
                 viewHolder.getCardView().setSelected(mSelectedItem == position);
             }
 
-            // Subtract 1 for the header
             MyArtist item = items.get(position);
 
             if (item != null) {
@@ -140,7 +139,7 @@ public class Adapters {
                 notifyItemChanged(mSelectedItem);
 
                 if (itemClickListener != null) {
-                    itemClickListener.onItemClick(v, getPosition());
+                    itemClickListener.onItemClick(v, getAdapterPosition());
                 }
             }
         }
@@ -167,7 +166,7 @@ public class Adapters {
         private Context mContext;
         private List<MyTrack> mItems;
         private View mHeader;
-//        private static OnItemClickListener itemClickListener;
+        private static OnItemClickListener itemClickListener;
 
         public ArtistTrackAdapter(Context context, List<MyTrack> items, View header) {
             mContext = context;
@@ -196,7 +195,7 @@ public class Adapters {
             MyTrack item = mItems.get(position - 1);
 
             if (item != null) {
-                viewHolder.getAlbumName().setText(mContext.getString(R.string.content_track_position, position, item.album.name));
+                viewHolder.getAlbumName().setText(mContext.getString(R.string.content_track_position, position, item.getAlbumName()));
                 viewHolder.getTrackName().setText(item.name);
                 if (!TextUtils.isEmpty(item.getImageUrl())) {
                     Picasso.with(mContext)
@@ -236,15 +235,15 @@ public class Adapters {
             notifyDataSetChanged();
         }
 
-//        public void setOnItemClickListener(final OnItemClickListener itemClickListener) {
-//            ArtistTrackAdapter.itemClickListener = itemClickListener;
-//        }
+        public void setOnItemClickListener(final OnItemClickListener itemClickListener) {
+            ArtistTrackAdapter.itemClickListener = itemClickListener;
+        }
 
-//        public interface OnItemClickListener {
-//            void onItemClick(View view, int position);
-//        }
+        public interface OnItemClickListener {
+            void onItemClick(View view, int position);
+        }
 
-        public class ViewHolder extends RecyclerView.ViewHolder { //implements View.OnClickListener {
+        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
             private TextView albumName;
             private TextView trackName;
             private ImageView albumThumb;
@@ -258,7 +257,7 @@ public class Adapters {
                 albumThumb = (ImageView) base.findViewById(R.id.album_thumb);
                 progress = (ProgressBar) base.findViewById(R.id.progress);
 
-//                base.setOnClickListener(this);
+                base.setOnClickListener(this);
             }
 
             public TextView getAlbumName() {
@@ -277,12 +276,12 @@ public class Adapters {
                 return progress;
             }
 
-//            @Override
-//            public void onClick(View v) {
-//                if (itemClickListener != null) {
-//                    itemClickListener.onItemClick(v, getPosition());
-//                }
-//            }
+            @Override
+            public void onClick(View v) {
+                if (itemClickListener != null) {
+                    itemClickListener.onItemClick(v, getAdapterPosition());
+                }
+            }
         }
 
         private Callback getLoaderCallback(final ProgressBar progressBar) {

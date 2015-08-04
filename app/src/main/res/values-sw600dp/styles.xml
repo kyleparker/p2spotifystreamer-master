@@ -11,7 +11,8 @@
         <item name="android:windowCloseOnTouchOutside">true</item>
         <item name="android:windowFrame">@null</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowBackground">@color/black_transparent</item>
     </style>
 
-    <style name="AppTheme.FloatingWindow" parent="AppTheme.FloatingWindow.Base" />
+    <style name="AppTheme.FloatingWindow" parent="AppTheme.FloatingWindow.Base"/>
 </resources>

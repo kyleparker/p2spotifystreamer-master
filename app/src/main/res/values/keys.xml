@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="device_type_phone_key">deviceTypePhone</string>
-    <string name="device_type_tablet_key">deviceTypeTablet</string>
+    <string name="selected_artist_id_key">selectedArtistId</string>
+    <string name="selected_artist_position_key">selectedArtistPosition</string>
+    <string name="selected_track_id_key">selectedTrackId</string>
+    <string name="selected_track_position_key">selectedTrackPosition</string>
+
+    <string name="settings_country_key">settingsCountry</string>
 </resources>

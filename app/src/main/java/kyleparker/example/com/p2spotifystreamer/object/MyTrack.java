@@ -11,7 +11,33 @@ import kaaes.spotify.webapi.android.models.Track;
  * Created by kyleparker on 6/18/2015.
  */
 public class MyTrack extends Track implements Parcelable {
+    private String albumName;
+    private String artistId;
+    private String artistName;
     private String imageUrl;
+
+    public MyArtist artist = new MyArtist();
+
+    public String getAlbumName() {
+        return albumName;
+    }
+    public void setAlbumName(String albumName) {
+        this.albumName = albumName;
+    }
+
+    public String getArtistId() {
+        return artistId;
+    }
+    public void setArtistId(String artistId) {
+        this.artistId = artistId;
+    }
+
+    public String getArtistName() {
+        return artistName;
+    }
+    public void setArtistName(String artistName) {
+        this.artistName = artistName;
+    }
 
     public String getImageUrl() {
         return imageUrl;
@@ -33,9 +59,15 @@ public class MyTrack extends Track implements Parcelable {
             parcel.writeString(id);
             parcel.writeString(name);
             parcel.writeString(imageUrl);
-            parcel.writeString(album.name);
+            parcel.writeInt(track_number);
+            parcel.writeLong(duration_ms);
+            parcel.writeString(preview_url);
+            parcel.writeString(type);
+            parcel.writeString(albumName);
+            parcel.writeString(artistId);
+            parcel.writeString(artistName);
 
-            parcel.writeList(artists);
+            parcel.writeParcelable(artist, 0);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -45,11 +77,16 @@ public class MyTrack extends Track implements Parcelable {
         id = source.readString();
         name = source.readString();
         imageUrl = source.readString();
-        album.name = source.readString();
+        track_number = source.readInt();
+        duration_ms = source.readLong();
+        preview_url = source.readString();
+        type = source.readString();
+        albumName = source.readString();
+        artistId = source.readString();
+        artistName = source.readString();
 
         ClassLoader classLoader = getClass().getClassLoader();
-
-        artists = source.readParcelable(classLoader);
+        artist = source.readParcelable(classLoader);
     }
 
     public static final Creator<MyTrack> CREATOR = new Creator<MyTrack>() {

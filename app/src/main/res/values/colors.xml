@@ -13,6 +13,7 @@
     <color name="text_secondary">#727272</color>
 
     <color name="background_content">#ffffffff</color>
+    <color name="background_cardview">#272727</color>
     <color name="background_window">#333333</color>
     <color name="black_transparent">#4d000000</color>
 

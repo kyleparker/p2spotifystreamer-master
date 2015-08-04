@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "kyleparker.example.com.p2spotifystreamer"
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"

@@ -6,24 +6,39 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Permission requested for the media player service -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Permission to write to SD card -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".ui.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".ui.ArtistTrackActivity" />
         <activity android:name=".ui.PlayerActivity"
                   android:theme="@style/AppTheme.FloatingWindow" />
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:theme="@style/AppTheme.Settings" />
+
+        <service android:name=".service.MediaPlayerService" />
+
+        <!-- Providers -->
+        <provider
+            android:name=".content.AppContentProvider"
+            android:authorities="kyleparker.example.com.p2spotifystreamer"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -42,14 +42,15 @@ import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.AlbumSimple;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
 import kyleparker.example.com.p2spotifystreamer.R;
+import kyleparker.example.com.p2spotifystreamer.content.ProviderUtils;
 import kyleparker.example.com.p2spotifystreamer.object.MyTrack;
 import kyleparker.example.com.p2spotifystreamer.ui.BaseActivity;
 import kyleparker.example.com.p2spotifystreamer.util.Adapters;
 import kyleparker.example.com.p2spotifystreamer.util.Constants;
+import kyleparker.example.com.p2spotifystreamer.util.PrefUtils;
 import kyleparker.example.com.p2spotifystreamer.util.Utils;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -65,6 +66,8 @@ import retrofit.client.Response;
 // locally in list. The queried results are retained on rotation.
 // DONE: Display a message if no tracks found for artist
 // DONE: Display a loading spinner during the data retrieval
+// DONE: Tapping on the track opens the player and set to the proper position
+// DONE: Add a "close" option on the player fragment
 
 /**
  * Fragment to display the top 10 tracks for a selected artist
@@ -98,6 +101,8 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
     private String mArtistId;
     private String mArtistName;
     private String mImageUrl;
+    private String mCountryCode;
+    private String mCountryName;
 
     // The fragment's current callback object, which is notified of list item clicks.
     private Callbacks mCallbacks = sDummyCallbacks;
@@ -140,6 +145,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
             outState.putParcelableArrayList(Constants.KEY_TRACK_ARRAY, mTrackList);
         }
     }
+
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -265,6 +271,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
 
         mTrackList = new ArrayList<>();
         mAdapter = new Adapters.ArtistTrackAdapter(mActivity, mTrackList, headerView);
+        mAdapter.setOnItemClickListener(mOnItemClickListener);
         recyclerView.setAdapter(mAdapter);
 
         return recyclerView;
@@ -287,8 +294,6 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
 
     /**
      * Retrieve the Top 10 tracks for the artist, based on the artist selected on the previous screen
-     *
-     * TODO: Create a setting to allow the user to select the country - initially, default to US
      */
     private void getArtistTrackList() {
         if (Utils.isOnline(mActivity)) {
@@ -300,7 +305,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
             SpotifyService service = api.getService();
 
             Map<String, Object> options = new HashMap<>();
-            options.put(SpotifyService.COUNTRY, Constants.US_COUNTRY_ID);
+            options.put(SpotifyService.COUNTRY, mCountryCode);
             options.put(SpotifyService.OFFSET, 0);
             options.put(SpotifyService.LIMIT, 10);
 
@@ -319,7 +324,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
         Bundle extras = intent.getExtras();
         if (extras != null) {
             mArtistId = extras.getString(Constants.EXTRA_ARTIST_ID);
-            mArtistName = extras.getString(Constants.EXTRA_TITLE);
+            mArtistName = extras.getString(Constants.EXTRA_ARTIST_NAME);
             mImageUrl = extras.getString(Constants.EXTRA_IMAGE_URL);
             mIsTablet = extras.getBoolean(Constants.EXTRA_IS_TABLET);
         }
@@ -348,6 +353,22 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
                 updateViews(scrollable.getCurrentScrollY(), false);
             }
         });
+
+        mCountryCode = PrefUtils.getString(mActivity, R.string.settings_country_key, Constants.US_COUNTRY_ID);
+
+        CharSequence[] entries = mActivity.getResources().getTextArray(R.array.country_array);
+        CharSequence[] entryValues = mActivity.getResources().getTextArray(R.array.country_array_values);
+
+        if (entryValues != null) {
+            for (int i = entryValues.length - 1; i >= 0; i--) {
+                if (entryValues[i].equals(mCountryCode)) {
+                    mCountryName = entries[i].toString();
+                }
+            }
+        }
+
+        TextView titleView = (TextView) mRootView.findViewById(R.id.title);
+        titleView.setText(mActivity.getString(R.string.content_top_ten_tracks, mCountryName));
 
         if (mIsTablet) {
             // If the user is on a tablet, hide the artist image
@@ -439,6 +460,22 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
     }
 
     /**
+     * Handle the {@link Adapters.ArtistTrackAdapter.OnItemClickListener} event when the user selects a track
+     * from the track list
+     */
+    private Adapters.ArtistTrackAdapter.OnItemClickListener mOnItemClickListener =
+            new Adapters.ArtistTrackAdapter.OnItemClickListener() {
+        @Override
+        public void onItemClick(View view, int position) {
+            if (!mTrackList.isEmpty()) {
+                // Notify the active callbacks interface (the activity, if the fragment is attached to one) that
+                // an item has been selected.
+                mCallbacks.onTrackSelected(mArtistId, mArtistName, mTrackList, position - 1);
+            }
+        }
+    };
+
+    /**
      * Callback for the Spotify searchArtist method. A successful search will load the adapter and display the results.
      */
     private retrofit.Callback<Tracks> mSpotifyCallback = new retrofit.Callback<Tracks>() {
@@ -452,21 +489,36 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
                     return;
                 }
 
+                ProviderUtils provider = ProviderUtils.Factory.get(mActivity);
+
+                // Reset the search results and delete any existing tracks from the database
+                provider.deleteTracks();
+
                 mTrackList = new ArrayList<>();
                 List<Track> trackList = result.tracks;
 
                 for (Track track : trackList) {
                     MyTrack myTrack = new MyTrack();
-                    myTrack.album = new AlbumSimple();
 
                     myTrack.id = track.id;
                     myTrack.name = track.name;
+                    myTrack.preview_url = track.preview_url;
                     if (track.album.images != null && track.album.images.size() > 0) {
                         myTrack.setImageUrl(track.album.images.get(0).url);
                     }
-                    myTrack.album.name = track.album.name;
+                    if (track.album != null) {
+                        myTrack.setAlbumName(track.album.name);
+                    }
+                    myTrack.setArtistId(mArtistId);
+                    myTrack.setArtistName(mArtistName);
+                    myTrack.track_number = track.track_number;
+                    myTrack.duration_ms = track.duration_ms;
+                    myTrack.type = track.type;
 
                     mTrackList.add(myTrack);
+
+                    // Insert the search result in the database
+                    provider.insertTrack(myTrack);
                 }
 
                 // In order to update the adapter and the recyclerview, the addAll method must be run on the main UI thread
@@ -505,7 +557,7 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
      */
     public interface Callbacks {
         // Callback for when an item has been selected.
-        void onItemSelected(String id, String artistName, String imageUrl);
+        void onTrackSelected(String id, String artistName, ArrayList<MyTrack> tracks, int position);
     }
 
     /**
@@ -514,6 +566,6 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
      */
     private static Callbacks sDummyCallbacks = new Callbacks() {
         @Override
-        public void onItemSelected(String id, String artistName, String imageUrl) { }
+        public void onTrackSelected(String id, String artistName, ArrayList<MyTrack> tracks, int position) { }
     };
 }

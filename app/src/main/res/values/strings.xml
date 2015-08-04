@@ -1,18 +1,33 @@
 <resources>
     <string name="app_name">Spotify Streamer</string>
 
+    <string name="action_now_playing">Now playing</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_share">Share</string>
+
     <string name="content_artist_thumb">Artist thumbnail for %1$s</string>
     <string name="content_loading">Loading…</string>
+    <string name="content_next">Next track</string>
+    <string name="content_pause">Pause</string>
+    <string name="content_play">Play</string>
+    <string name="content_previous">Previous track</string>
     <string name="content_results">Search results</string>
     <string name="content_search">Search for artist</string>
-    <string name="content_top_ten_tracks">Top 10 Tracks</string>
+    <string name="content_share_path_picker_title">Select an application</string>
+    <string name="content_share_message">Hello!\n\nI think you\'ll really like this song - tap the link to start
+        playback: %1$s\n\n
+        Artist: %2$s\n
+        Album: %3$s\n
+        Track: %4$s</string>
+    <string name="content_share_subject">From Spotify Streamer: %1$s from %2$s</string>
+    <string name="content_top_ten_tracks">Top 10 Tracks for %1$s</string>
     <string name="content_track_position">%1$d. %2$s</string>
 
-    <string name="action_settings">Settings</string>
-
+    <string name="toast_error_loading">Your queue is empty</string>
     <string name="toast_error_no_query">Please enter an artist name</string>
     <string name="toast_error_not_online">Oops! It looks like you device is offline</string>
     <string name="toast_error_results">Oops! There was an error searching for %1$s</string>
+    <string name="toast_error_track">Oops! There was an error retrieving the track info</string>
     <string name="toast_no_results">No results found for %1$s</string>
     <string name="toast_not_implemented">This feature is not yet implemented</string>
 </resources>
