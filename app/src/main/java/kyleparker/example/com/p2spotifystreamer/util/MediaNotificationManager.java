@@ -302,17 +302,19 @@ public class MediaNotificationManager extends BroadcastReceiver {
     }
 
     private void fetchBitmapFromURLAsync(final String bitmapUrl, final Notification.Builder builder) {
-        AlbumArtCache.getInstance().fetch(bitmapUrl, new AlbumArtCache.FetchListener() {
-            @Override
-            public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
-                if (mMetadata != null && artUrl.equals(mMetadata.getDescription().getIconUri().toString())) {
-                    // If the media is still the same, update the notification:
-//                    LogHelper.e(TAG, "fetchBitmapFromURLAsync: set bitmap to ", artUrl);
-                    builder.setLargeIcon(bitmap);
-                    mNotificationManager.notify(NOTIFICATION_ID, builder.build());
+        if (Utils.isOnline(mContext)) {
+            AlbumArtCache.getInstance().fetch(bitmapUrl, new AlbumArtCache.FetchListener() {
+                @Override
+                public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
+                    if (mMetadata != null && artUrl.equals(mMetadata.getDescription().getIconUri().toString())) {
+                        // If the media is still the same, update the notification:
+                        //                    LogHelper.e(TAG, "fetchBitmapFromURLAsync: set bitmap to ", artUrl);
+                        builder.setLargeIcon(bitmap);
+                        mNotificationManager.notify(NOTIFICATION_ID, builder.build());
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private void setNotificationPlaybackState(Notification.Builder builder) {

@@ -468,9 +468,13 @@ public class ArtistTrackListFragment extends Fragment implements ObservableScrol
         @Override
         public void onItemClick(View view, int position) {
             if (!mTrackList.isEmpty()) {
-                // Notify the active callbacks interface (the activity, if the fragment is attached to one) that
-                // an item has been selected.
-                mCallbacks.onTrackSelected(mArtistId, mArtistName, mTrackList, position - 1);
+                if (Utils.isOnline(mActivity)) {
+                    // Notify the active callbacks interface (the activity, if the fragment is attached to one) that
+                    // an item has been selected.
+                    mCallbacks.onTrackSelected(mArtistId, mArtistName, mTrackList, position - 1);
+                } else {
+                    Toast.makeText(getActivity(), getResources().getString(R.string.toast_error_not_online), Toast.LENGTH_SHORT).show();
+                }
             }
         }
     };

@@ -119,6 +119,11 @@ public class PlayerFragment extends DialogFragment {
                     // set Progress bar values
                     mSeekBar.setProgress(0);
                     mSeekBar.setMax(100);
+                } else if (action.equalsIgnoreCase(MediaPlayerService.ACTION_OFFLINE)) {
+                    mButtonPlay.setVisibility(View.VISIBLE);
+                    mProgressBar.setVisibility(View.GONE);
+
+                    Toast.makeText(mActivity, R.string.toast_error_not_online, Toast.LENGTH_LONG).show();
                 }
             }
         };

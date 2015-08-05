@@ -30,6 +30,7 @@ import kyleparker.example.com.p2spotifystreamer.util.Constants;
 import kyleparker.example.com.p2spotifystreamer.util.LogHelper;
 import kyleparker.example.com.p2spotifystreamer.util.MediaNotificationManager;
 import kyleparker.example.com.p2spotifystreamer.util.PrefUtils;
+import kyleparker.example.com.p2spotifystreamer.util.Utils;
 
 // DONE: Lock the notification during playback
 
@@ -58,10 +59,12 @@ public class MediaPlayerService extends Service implements Playback.Callback {
     public static final String ACTION_SEEK = "action_seek";
     public static final String ACTION_STOP = "action_stop";
     public static final String ACTION_PREPARED = "action_prepared";
+    public static final String ACTION_OFFLINE = "action_offline";
 
     // Delay stopSelf by using a handler.
     private static final int STOP_DELAY = 30000;
 
+    private Context mContext;
     private ArrayList<MyTrack> mTracks;
     private String mArtistName;
     private int mPosition;
@@ -84,6 +87,7 @@ public class MediaPlayerService extends Service implements Playback.Callback {
     @Override
     public void onCreate() {
         super.onCreate();
+        mContext = this;
     }
 
     @Override
@@ -109,7 +113,7 @@ public class MediaPlayerService extends Service implements Playback.Callback {
 
         mMediaController = new MediaController(getApplicationContext(), mMediaSession.getSessionToken());
 
-        mBroadcastManager = LocalBroadcastManager.getInstance(this);
+        mBroadcastManager = LocalBroadcastManager.getInstance(mContext);
 
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
@@ -123,8 +127,7 @@ public class MediaPlayerService extends Service implements Playback.Callback {
         mPlayback.setCallback(this);
         mPlayback.start();
 
-        mMediaNotificationManager = new MediaNotificationManager(this, this.getApplicationContext(), mTracks,
-                mArtistName, mPosition);
+        mMediaNotificationManager = new MediaNotificationManager(this, mContext, mTracks, mArtistName, mPosition);
         handlePlayRequest();
         updatePlaybackState(null);
 
@@ -158,7 +161,6 @@ public class MediaPlayerService extends Service implements Playback.Callback {
         @Override
         public void onPause() {
             super.onPause();
-//            LogHelper.e(TAG, "pause. current state=" + mPlayback.getState());
             handlePauseRequest();
         }
 
@@ -190,7 +192,6 @@ public class MediaPlayerService extends Service implements Playback.Callback {
 
         @Override
         public void onStop() {
-//            LogHelper.e(TAG, "stop. current state=" + mPlayback.getState());
             handleStopRequest(null);
         }
 
@@ -312,9 +313,6 @@ public class MediaPlayerService extends Service implements Playback.Callback {
         LogHelper.i("***> handlePlayRequest", "here");
         LogHelper.e(TAG, "handlePlayRequest: mState=" + mPlayback.getState());
 
-        if (mPlayback.getState() != PlaybackState.STATE_NONE) {
-            sendResult(ACTION_PLAY);
-        }
         mDelayedStopHandler.removeCallbacksAndMessages(null);
         if (!mServiceStarted) {
             LogHelper.v(TAG, "Starting service");
@@ -335,6 +333,15 @@ public class MediaPlayerService extends Service implements Playback.Callback {
         PrefUtils.setInt(getApplicationContext(), R.string.selected_track_position_key, mPosition);
 
         updateMetadata();
+
+        if (!Utils.isOnline(mContext)) {
+            sendResult(ACTION_OFFLINE);
+            return;
+        }
+
+        if (mPlayback.getState() != PlaybackState.STATE_NONE) {
+            sendResult(ACTION_PLAY);
+        }
         mPlayback.play(mCurrentTrack);
     }
 
@@ -408,7 +415,7 @@ public class MediaPlayerService extends Service implements Playback.Callback {
         }
 
         mMediaSession.setPlaybackState(stateBuilder.build());
-        boolean displayNotification = PrefUtils.getBoolean(this, R.string.settings_notification_display_key, true);
+        boolean displayNotification = PrefUtils.getBoolean(mContext, R.string.settings_notification_display_key, true);
 
         if ((state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_PAUSED ||
                 state == PlaybackState.STATE_BUFFERING) && displayNotification) {
@@ -421,7 +428,7 @@ public class MediaPlayerService extends Service implements Playback.Callback {
 
         // Set the proper album artwork on the media session, so it can be shown in the
         // locked screen and in other places.
-        if (!TextUtils.isEmpty(mCurrentTrack.getImageUrl())) {
+        if (!TextUtils.isEmpty(mCurrentTrack.getImageUrl()) && Utils.isOnline(mContext)) {
             AlbumArtCache.getInstance().fetch(mCurrentTrack.getImageUrl(), new AlbumArtCache.FetchListener() {
                 @Override
                 public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
@@ -461,10 +468,8 @@ public class MediaPlayerService extends Service implements Playback.Callback {
             MediaPlayerService service = mWeakReference.get();
             if (service != null && service.mPlayback != null) {
                 if (service.mPlayback.isPlaying()) {
-//                    LogHelper.e(TAG, "Ignoring delayed stop since the media player is in use.");
                     return;
                 }
-//                LogHelper.e(TAG, "Stopping service with delay handler.");
                 service.stopSelf();
                 service.mServiceStarted = false;
             }
