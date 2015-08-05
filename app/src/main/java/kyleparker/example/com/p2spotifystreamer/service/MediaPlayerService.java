@@ -73,7 +73,7 @@ public class MediaPlayerService extends Service implements Playback.Callback {
     private DelayedStopHandler mDelayedStopHandler = new DelayedStopHandler(this);
 
     private Playback mPlayback;
-    private MediaNotificationManager mMediaNotificationManager;
+    private MediaNotificationManager mMediaNotificationManager = null;
     private MediaSession mMediaSession;
     private MediaController mMediaController;
     private LocalBroadcastManager mBroadcastManager;
@@ -408,8 +408,10 @@ public class MediaPlayerService extends Service implements Playback.Callback {
         }
 
         mMediaSession.setPlaybackState(stateBuilder.build());
+        boolean displayNotification = PrefUtils.getBoolean(this, R.string.settings_notification_display_key, true);
 
-        if (state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_PAUSED || state == PlaybackState.STATE_BUFFERING) {
+        if ((state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_PAUSED ||
+                state == PlaybackState.STATE_BUFFERING) && displayNotification) {
             mMediaNotificationManager.startNotification();
         }
     }

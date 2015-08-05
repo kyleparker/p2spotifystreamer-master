@@ -23,6 +23,13 @@
     <string name="content_top_ten_tracks">Top 10 Tracks for %1$s</string>
     <string name="content_track_position">%1$d. %2$s</string>
 
+    <string name="content_settings_country_default">US</string>
+    <string name="content_settings_country_summary">Select a country to view Top Tracks for the artist.</string>
+    <string name="content_settings_country_title">Select country</string>
+    <string name="content_settings_notification_disabled">Playback notifications disabled</string>
+    <string name="content_settings_notification_enabled">Playback notifications enabled</string>
+    <string name="content_settings_notification_title">Show playback notifications</string>
+
     <string name="toast_error_loading">Your queue is empty</string>
     <string name="toast_error_no_query">Please enter an artist name</string>
     <string name="toast_error_not_online">Oops! It looks like you device is offline</string>

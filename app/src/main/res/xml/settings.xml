@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <ListPreference     android:title="Select country"
-                        android:summary="Select a country to view Top Tracks for the artist."
-                        android:key="@string/settings_country_key"
-                        android:defaultValue="1"
-                        android:entries="@array/country_array"
-                        android:entryValues="@array/country_array_values" />
+    <ListPreference
+        android:defaultValue="@string/content_settings_country_default"
+        android:entries="@array/country_array"
+        android:entryValues="@array/country_array_values"
+        android:key="@string/settings_country_key"
+        android:summary="@string/content_settings_country_summary"
+        android:title="@string/content_settings_country_title"/>
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="@string/settings_notification_display_key"
+        android:summaryOff="@string/content_settings_notification_disabled"
+        android:summaryOn="@string/content_settings_notification_enabled"
+        android:title="@string/content_settings_notification_title"/>
 </PreferenceScreen>
